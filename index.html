@@ -244,12 +244,9 @@
 
     <div class="panel log-panel" id="logPanel">
         <h2>Historique des Actions</h2>
-        <select id="savedGames" onchange="loadGame(this.value)">
-            <option value="">Sélectionnez une sauvegarde</option>
-        </select>
+        <div id="logContent" class="log-content"></div>
         <button onclick="clearLog()">Clear Log</button>
         <button class="close-button" onclick="togglePanel('logPanel')">Fermer</button>
-        <div id="logContent" class="log-content"></div>
     </div>
 
     <div class="countdown" id="countdown">Temps restant : --j --h --m --s</div>
@@ -264,91 +261,89 @@
         const endDate = new Date("2024-11-21T18:00:00");
         let autoDecrementActive = false;
         let autoDecrementInterval;
-        let saveInterval;
 
-        function initAutoSave() {
-            saveInterval = setInterval(saveGame, 5 * 60 * 1000);
-            updateSavedGamesDropdown();
+        // Restaurer l'état du jeu depuis localStorage
+        function restoreGameState() {
+            const savedState = JSON.parse(localStorage.getItem("gameState"));
+            if (savedState) {
+                Object.assign(teams, savedState.teams);
+                actionsLog.push(...savedState.log);
+                updateAllDisplay();
+                console.log("État du jeu restauré.");
+            }
         }
 
-        function saveGame() {
+        // Sauvegarder l'état du jeu dans localStorage
+        function saveGameState() {
             const gameState = {
                 teams: JSON.parse(JSON.stringify(teams)),
-                log: [...actionsLog],
-                timestamp: new Date().toLocaleString()
+                log: [...actionsLog]
             };
+            localStorage.setItem("gameState", JSON.stringify(gameState));
+            console.log("État du jeu sauvegardé.");
+        }
 
-            let savedGames = JSON.parse(localStorage.getItem("savedGames")) || [];
-            savedGames.push(gameState);
+        // Détection des jours et heures de décompte
+        function isCountingTime() {
+            const now = new Date();
+            const day = now.getDay(); // 0 = Dimanche, 1 = Lundi, ..., 6 = Samedi
+            const hour = now.getHours();
 
-            if (savedGames.length > 10) {
-                savedGames.shift();
+            // Du lundi au vendredi, entre 9h et 18h
+            if (day >= 1 && day <= 5 && hour >= 9 && hour < 18) return true;
+            // Samedi entre 10h et 17h
+            if (day === 6 && hour >= 10 && hour < 17) return true;
+            // Sinon (dimanche ou jours fériés), pas de décompte
+            return false;
+        }
+
+        // Mise à jour des points si les conditions de temps sont remplies
+        function decreasePoints() {
+            if (!isCountingTime()) return;
+
+            Object.keys(teams).forEach(teamKey => {
+                if (!teams[teamKey].frozen) {
+                    teams[teamKey].points = Math.max(0, teams[teamKey].points - 1);
+                    document.getElementById(`points-${teamKey}`).textContent = teams[teamKey].points;
+                }
+            });
+            updateRanking();
+        }
+
+        // Déclencher le décompte automatique
+        function toggleAutoDecrement() {
+            autoDecrementActive = !autoDecrementActive;
+            document.getElementById("autoDecrementStatus").textContent = autoDecrementActive ? "ON" : "OFF";
+            document.getElementById("statusIndicator").style.backgroundColor = autoDecrementActive ? "green" : "red";
+
+            if (autoDecrementActive) {
+                autoDecrementInterval = setInterval(decreasePoints, 60000);
+            } else {
+                clearInterval(autoDecrementInterval);
             }
-
-            localStorage.setItem("savedGames", JSON.stringify(savedGames));
-            updateSavedGamesDropdown();
         }
 
-        function loadGame(index) {
-            if (index === "") return;
-
-            const savedGames = JSON.parse(localStorage.getItem("savedGames"));
-            const gameState = savedGames[index];
-
-            if (!gameState) return;
-
-            Object.keys(gameState.teams).forEach(teamKey => {
-                teams[teamKey] = gameState.teams[teamKey];
+        // Fonction pour mettre à jour tous les affichages au chargement
+        function updateAllDisplay() {
+            Object.keys(teams).forEach(teamKey => {
                 document.getElementById(`points-${teamKey}`).textContent = teams[teamKey].points;
+                document.getElementById(`freeze-timer-${teamKey}`).textContent = teams[teamKey].frozen ? "Freeze Activé" : "";
             });
-
-            actionsLog.length = 0;
-            gameState.log.forEach(logEntry => actionsLog.push(logEntry));
-            updateLogContent();
+            updateRanking();
+            updateCountdown();
         }
 
-        function updateSavedGamesDropdown() {
-            const savedGames = JSON.parse(localStorage.getItem("savedGames")) || [];
-            const dropdown = document.getElementById("savedGames");
-            dropdown.innerHTML = `<option value="">Sélectionnez une sauvegarde</option>`;
-            savedGames.forEach((game, index) => {
-                const option = document.createElement("option");
-                option.value = index;
-                option.textContent = `Sauvegarde ${index + 1} - ${game.timestamp}`;
-                dropdown.appendChild(option);
-            });
-        }
+        // Sauvegarde automatique à la fermeture de la page
+        window.addEventListener("beforeunload", saveGameState);
 
-        function updateLogContent() {
-            const logContent = document.getElementById("logContent");
-            logContent.innerHTML = "";
-            actionsLog.forEach(log => {
-                const entry = document.createElement("div");
-                entry.className = "log-entry";
-                entry.textContent = log;
-                logContent.appendChild(entry);
-            });
-        }
-
-        function clearLog() {
-            const logContent = document.getElementById("logContent");
-            const timestamp = new Date().toLocaleString();
-            logContent.innerHTML = `<div class="log-entry">Log clear le ${timestamp}</div>`;
-        }
-
+        // Initialisation
         document.addEventListener("DOMContentLoaded", () => {
-            initAutoSave();
-            setInterval(updateCountdown, 1000);
+            restoreGameState(); // Restaure le jeu s'il y a une sauvegarde
+            toggleAutoDecrement(); // Active le décompte si nécessaire
+            setInterval(updateCountdown, 1000); // Compte à rebours mis à jour chaque seconde
         });
 
-        function updateCountdown() { /* Ton code de compte à rebours */ }
-        function toggleAutoDecrement() { /* Ton code pour le décrément automatique */ }
-        function updatePoints() { /* Ton code pour l’actualisation des points */ }
-        function toggleFreeze() { /* Ton code pour activer/désactiver le freeze */ }
-        function undoLastAction() { /* Ton code pour annuler la dernière action */ }
-        function togglePanel(panelId) { /* Ton code pour afficher/masquer les panneaux */ }
-        function confirmClick(button) { /* Ton code pour ajouter une animation de clic */ }
+        // Autres fonctions pour la gestion du jeu (ex. updateCountdown, updatePoints, etc.)
     </script>
 </body>
 </html>
-
