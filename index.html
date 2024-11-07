@@ -5,8 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MONEY DROP</title>
     <style>
+        /* Importation de la police numérique */
         @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap');
 
+        /* Style de la page */
         body {
             margin: 0;
             background-color: #000;
@@ -19,18 +21,20 @@
             height: 100vh;
         }
 
+        /* Titre principal */
         .title-container {
             margin-top: 20px;
         }
         
         .title {
             font-size: 4em;
-            color: #1a2e5d;
+            color: #1a2e5d; /* Bleu marine */
             font-family: Impact, sans-serif;
             text-align: center;
             text-transform: uppercase;
         }
 
+        /* En-tête des boutons et affichages */
         .header {
             display: flex;
             justify-content: space-between;
@@ -50,6 +54,7 @@
             font-size: 1em;
         }
 
+        /* Indicateur de statut du jeu */
         .status-indicator {
             position: absolute;
             top: 0;
@@ -60,6 +65,7 @@
             background-color: red;
         }
 
+        /* Classement */
         .ranking {
             font-size: 1.2em;
             color: #ddd;
@@ -67,6 +73,7 @@
             margin-top: 10px;
         }
 
+        /* Boutons principaux */
         .buttons {
             display: flex;
             justify-content: center;
@@ -92,6 +99,7 @@
             transform: scale(0.95);
         }
 
+        /* Cadrans numériques rouges */
         .team-container {
             display: flex;
             justify-content: space-around;
@@ -139,6 +147,7 @@
             margin-top: 5px;
         }
 
+        /* Panel de paramètres et de log */
         .panel {
             display: none;
             position: absolute;
@@ -155,6 +164,7 @@
             overflow-y: auto;
         }
 
+        /* Log styling */
         .log-entry {
             font-size: 0.9em;
             margin: 5px 0;
@@ -163,6 +173,7 @@
             text-align: left;
         }
 
+        /* Compte à rebours centré en bas */
         .countdown {
             font-size: 2em;
             color: #ddd;
@@ -174,12 +185,15 @@
     </style>
 </head>
 <body>
+    <!-- Titre principal -->
     <div class="title-container">
         <div class="title">MONEY DROP</div>
     </div>
 
+    <!-- Indicateur de statut du jeu -->
     <div class="status-indicator" id="statusIndicator"></div>
 
+    <!-- En-tête avec les informations et les boutons de navigation -->
     <div class="header">
         <div class="header-info">
             <div>Temps de Freeze (points sauvés) : <span id="freezeTime">Nico: 0m, Yanis: 0m, Matt: 0m</span></div>
@@ -191,8 +205,10 @@
         </div>
     </div>
 
+    <!-- Classement des équipes -->
     <div class="ranking" id="ranking"></div>
 
+    <!-- Conteneur des équipes avec les cadrans numériques rouges -->
     <div class="team-container">
         <div class="team">
             <div class="team-name">Equipe Nico</div>
@@ -226,6 +242,7 @@
         </div>
     </div>
 
+    <!-- Interface des paramètres -->
     <div class="panel settings-panel" id="settingsPanel">
         <h2>Modifier les Points & Freeze</h2>
         <select id="teamSelect">
@@ -237,11 +254,17 @@
         <button onclick="confirmClick(this); updatePoints()">Appliquer</button>
         <input type="number" id="freezeDuration" placeholder="Durée Freeze (minutes)" min="1">
         <button class="freeze-button" id="freezeButton" onclick="confirmClick(this); toggleFreeze()">Freeze</button>
+        
+        <!-- Bouton pour annuler la dernière action -->
         <button onclick="confirmClick(this); undoLastAction()">Annuler la dernière action</button>
+        
+        <!-- Bouton ON/OFF pour activer/désactiver le décompte automatique -->
         <button onclick="toggleAutoDecrement()">Décompte automatique: <span id="autoDecrementStatus">OFF</span></button>
+        
         <button class="close-button" onclick="togglePanel('settingsPanel')">Fermer</button>
     </div>
 
+    <!-- Interface de log -->
     <div class="panel log-panel" id="logPanel">
         <h2>Historique des Actions</h2>
         <div id="logContent" class="log-content"></div>
@@ -249,6 +272,7 @@
         <button class="close-button" onclick="togglePanel('logPanel')">Fermer</button>
     </div>
 
+    <!-- Compte à rebours centré en bas -->
     <div class="countdown" id="countdown">Temps restant : --j --h --m --s</div>
 
     <script>
@@ -262,88 +286,111 @@
         let autoDecrementActive = false;
         let autoDecrementInterval;
 
-        // Restaurer l'état du jeu depuis localStorage
-        function restoreGameState() {
-            const savedState = JSON.parse(localStorage.getItem("gameState"));
-            if (savedState) {
-                Object.assign(teams, savedState.teams);
-                actionsLog.push(...savedState.log);
-                updateAllDisplay();
-                console.log("État du jeu restauré.");
-            }
-        }
-
-        // Sauvegarder l'état du jeu dans localStorage
-        function saveGameState() {
-            const gameState = {
-                teams: JSON.parse(JSON.stringify(teams)),
-                log: [...actionsLog]
-            };
-            localStorage.setItem("gameState", JSON.stringify(gameState));
-            console.log("État du jeu sauvegardé.");
-        }
-
-        // Détection des jours et heures de décompte
-        function isCountingTime() {
+        function updateCountdown() {
             const now = new Date();
-            const day = now.getDay(); // 0 = Dimanche, 1 = Lundi, ..., 6 = Samedi
-            const hour = now.getHours();
-
-            // Du lundi au vendredi, entre 9h et 18h
-            if (day >= 1 && day <= 5 && hour >= 9 && hour < 18) return true;
-            // Samedi entre 10h et 17h
-            if (day === 6 && hour >= 10 && hour < 17) return true;
-            // Sinon (dimanche ou jours fériés), pas de décompte
-            return false;
+            const timeLeft = endDate - now;
+            if (timeLeft <= 0) {
+                document.getElementById("countdown").textContent = "Jeu terminé";
+                clearInterval(countdownInterval);
+                return;
+            }
+            const days = Math.floor(timeLeft / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((timeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
+            document.getElementById("countdown").textContent = Temps restant : ${days}j ${hours}h ${minutes}m ${seconds}s;
         }
 
-        // Mise à jour des points si les conditions de temps sont remplies
-        function decreasePoints() {
-            if (!isCountingTime()) return;
-
-            Object.keys(teams).forEach(teamKey => {
-                if (!teams[teamKey].frozen) {
-                    teams[teamKey].points = Math.max(0, teams[teamKey].points - 1);
-                    document.getElementById(`points-${teamKey}`).textContent = teams[teamKey].points;
-                }
-            });
+        function updatePoints() {
+            const teamKey = document.getElementById("teamSelect").value;
+            const pointsChange = parseInt(document.getElementById("pointsInput").value, 10);
+            if (isNaN(pointsChange)) return;
+            teams[teamKey].points += pointsChange;
+            document.getElementById(points-${teamKey}).textContent = teams[teamKey].points;
+            logAction(teamKey, pointsChange);
+            actionsLog.push({ teamKey, pointsChange });
             updateRanking();
         }
 
-        // Déclencher le décompte automatique
         function toggleAutoDecrement() {
             autoDecrementActive = !autoDecrementActive;
             document.getElementById("autoDecrementStatus").textContent = autoDecrementActive ? "ON" : "OFF";
             document.getElementById("statusIndicator").style.backgroundColor = autoDecrementActive ? "green" : "red";
-
             if (autoDecrementActive) {
-                autoDecrementInterval = setInterval(decreasePoints, 60000);
+                autoDecrementInterval = setInterval(decreasePoints, 60000); // Décrément toutes les minutes
             } else {
                 clearInterval(autoDecrementInterval);
             }
         }
 
-        // Fonction pour mettre à jour tous les affichages au chargement
-        function updateAllDisplay() {
+        function decreasePoints() {
             Object.keys(teams).forEach(teamKey => {
-                document.getElementById(`points-${teamKey}`).textContent = teams[teamKey].points;
-                document.getElementById(`freeze-timer-${teamKey}`).textContent = teams[teamKey].frozen ? "Freeze Activé" : "";
+                if (!teams[teamKey].frozen) {
+                    teams[teamKey].points = Math.max(0, teams[teamKey].points - 1);
+                    document.getElementById(points-${teamKey}).textContent = teams[teamKey].points;
+                }
             });
             updateRanking();
-            updateCountdown();
         }
 
-        // Sauvegarde automatique à la fermeture de la page
-        window.addEventListener("beforeunload", saveGameState);
+        function toggleFreeze() {
+            const teamKey = document.getElementById("teamSelect").value;
+            const team = teams[teamKey];
+            team.frozen = !team.frozen;
+            document.getElementById(freeze-timer-${teamKey}).textContent = team.frozen ? "Freeze Activé" : "";
+        }
 
-        // Initialisation
-        document.addEventListener("DOMContentLoaded", () => {
-            restoreGameState(); // Restaure le jeu s'il y a une sauvegarde
-            toggleAutoDecrement(); // Active le décompte si nécessaire
-            setInterval(updateCountdown, 1000); // Compte à rebours mis à jour chaque seconde
-        });
+        function updateRanking() {
+            const rankingEl = document.getElementById("ranking");
+            const teamPoints = Object.entries(teams).map(([key, data]) => ({ name: key, points: data.points }));
+            teamPoints.sort((a, b) => b.points - a.points);
 
-        // Autres fonctions pour la gestion du jeu (ex. updateCountdown, updatePoints, etc.)
+            const ranks = teamPoints.map((team, index) => {
+                if (index > 0 && team.points === teamPoints[index - 1].points) return "-";
+                return index === 0 ? "🏆 " + team.name : index === 1 ? "🥈 " + team.name : "🥉 " + team.name;
+            });
+
+            rankingEl.innerHTML = ranks.join(" | ");
+        }
+
+        function undoLastAction() {
+            const lastAction = actionsLog.pop();
+            if (!lastAction) return;
+            const { teamKey, pointsChange } = lastAction;
+            teams[teamKey].points -= pointsChange;
+            document.getElementById(points-${teamKey}).textContent = teams[teamKey].points;
+            logAction(teamKey, -pointsChange, "undo");
+            updateRanking();
+        }
+
+        function logAction(team, points, action = "points") {
+            const logContent = document.getElementById("logContent");
+            const entry = document.createElement("div");
+            entry.className = log-entry ${points > 0 ? 'add' : 'subtract'};
+            entry.innerHTML = 
+                <span class="team-${team}">${team.charAt(0).toUpperCase() + team.slice(1)}</span> 
+                ${action === "points" ? (points > 0 ? "a gagné" : "a perdu") +  ${Math.abs(points)} points : "Annulation de l'action précédente"}
+            ;
+            logContent.prepend(entry);
+        }
+
+        function clearLog() {
+            const logContent = document.getElementById("logContent");
+            const timestamp = new Date().toLocaleString();
+            logContent.innerHTML = <div class="log-entry">Log clear le ${timestamp}</div>;
+        }
+
+        function togglePanel(panelId) {
+            const panel = document.getElementById(panelId);
+            panel.style.display = panel.style.display === "none" || panel.style.display === "" ? "block" : "none";
+        }
+
+        function confirmClick(button) {
+            button.classList.add("confirm-click");
+            setTimeout(() => button.classList.remove("confirm-click"), 500);
+        }
+
+        setInterval(updateCountdown, 1000); // Mise à jour du compte à rebours toutes les secondes
     </script>
 </body>
 </html>
