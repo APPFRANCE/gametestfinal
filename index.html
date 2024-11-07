@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MONEY DROP</title>
+    <style>
+        /* Importation de la police numérique */
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700&display=swap');
+
+        /* Style de la page */
+        body {
+            margin: 0;
+            background-color: #000;
+            color: #fff;
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            height: 100vh;
+        }
+
+        /* Titre principal */
+        .title-container {
+            margin-top: 20px;
+        }
+        
+        .title {
+            font-size: 4em;
+            color: #1a2e5d; /* Bleu marine */
+            font-family: Impact, sans-serif;
+            text-align: center;
+            text-transform: uppercase;
+        }
+
+        /* En-tête des boutons et affichages */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 80%;
+            max-width: 1200px;
+            margin-top: 20px;
+            gap: 20px;
+            position: relative;
+        }
+
+        .header-info {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            color: #ddd;
+            font-size: 1em;
+        }
+
+        /* Indicateur de statut du jeu */
+        .status-indicator {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            background-color: red;
+        }
+
+        /* Classement */
+        .ranking {
+            font-size: 1.2em;
+            color: #ddd;
+            text-align: center;
+            margin-top: 10px;
+        }
+
+        /* Boutons principaux */
+        .buttons {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+        }
+
+        .button {
+            background-color: #444;
+            color: #fff;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.1s;
+            font-size: 1em;
+            text-align: center;
+        }
+
+        .button:hover {
+            background-color: #666;
+        }
+
+        .button:active {
+            transform: scale(0.95);
+        }
+
+        /* Cadrans numériques rouges */
+        .team-container {
+            display: flex;
+            justify-content: space-around;
+            width: 80%;
+            max-width: 1200px;
+            margin-top: 20px;
+            gap: 20px;
+        }
+
+        .team {
+            text-align: center;
+            background-color: #111;
+            border-radius: 12px;
+            padding: 20px;
+            width: 30%;
+            box-shadow: 0 4px 10px rgba(255, 0, 0, 0.5);
+        }
+
+        .team-name {
+            color: #aaa;
+            font-size: 1.5em;
+            margin-bottom: 10px;
+        }
+
+        .points {
+            font-size: 4em;
+            color: #ff0000;
+            font-family: 'Orbitron', sans-serif;
+            background-color: #111;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .team-details {
+            margin-top: 10px;
+            font-size: 0.9em;
+            color: #ccc;
+        }
+
+        .freeze-timer {
+            font-size: 1em;
+            color: #ddd;
+            margin-top: 5px;
+        }
+
+        /* Panel de paramètres et de log */
+        .panel {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: #222;
+            padding: 20px;
+            border-radius: 8px;
+            width: 300px;
+            text-align: center;
+            z-index: 10;
+            max-height: 60%;
+            overflow-y: auto;
+        }
+
+        /* Log styling */
+        .log-entry {
+            font-size: 0.9em;
+            margin: 5px 0;
+            padding: 5px;
+            border-bottom: 1px solid #333;
+            text-align: left;
+        }
+
+        /* Compte à rebours centré en bas */
+        .countdown {
+            font-size: 2em;
+            color: #ddd;
+            margin-top: 20px;
+            position: absolute;
+            bottom: 20px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <!-- Titre principal -->
+    <div class="title-container">
+        <div class="title">MONEY DROP</div>
+    </div>
+
+    <!-- Indicateur de statut du jeu -->
+    <div class="status-indicator" id="statusIndicator"></div>
+
+    <!-- En-tête avec les informations et les boutons de navigation -->
+    <div class="header">
+        <div class="header-info">
+            <div>Temps de Freeze (points sauvés) : <span id="freezeTime">Nico: 0m, Yanis: 0m, Matt: 0m</span></div>
+            <div>Indices trouvés : 🔑 <span id="indicesFound">Nico: 0, Yanis: 0, Matt: 0</span></div>
+        </div>
+        <div class="buttons">
+            <div class="button" onclick="togglePanel('settingsPanel')">Settings</div>
+            <div class="button" onclick="togglePanel('logPanel')">Log</div>
+        </div>
+    </div>
+
+    <!-- Classement des équipes -->
+    <div class="ranking" id="ranking"></div>
+
+    <!-- Conteneur des équipes avec les cadrans numériques rouges -->
+    <div class="team-container">
+        <div class="team">
+            <div class="team-name">Equipe Nico</div>
+            <div class="points" id="points-nico">10000</div>
+            <div class="team-details">
+                Capitaine: Nico<br>
+                Team: FRP<br>
+                Cust: Camille + Andela
+            </div>
+            <div class="freeze-timer" id="freeze-timer-nico"></div>
+        </div>
+        <div class="team">
+            <div class="team-name">Equipe Yanis</div>
+            <div class="points" id="points-yanis">10000</div>
+            <div class="team-details">
+                Capitaine: Yanis<br>
+                Team: FRY / FRL / FRN / FRM / FRT / FRH / FRS<br>
+                Cust: Léna + Imène
+            </div>
+            <div class="freeze-timer" id="freeze-timer-yanis"></div>
+        </div>
+        <div class="team">
+            <div class="team-name">Equipe Matt</div>
+            <div class="points" id="points-matt">10000</div>
+            <div class="team-details">
+                Capitaine: Matt<br>
+                Team: FRA / FRD / FRC / FRR et FRB<br>
+                Cust: Wendy + Sybille
+            </div>
+            <div class="freeze-timer" id="freeze-timer-matt"></div>
+        </div>
+    </div>
+
+    <!-- Interface des paramètres -->
+    <div class="panel settings-panel" id="settingsPanel">
+        <h2>Modifier les Points & Freeze</h2>
+        <select id="teamSelect">
+            <option value="nico">Equipe Nico</option>
+            <option value="yanis">Equipe Yanis</option>
+            <option value="matt">Equipe Matt</option>
+        </select>
+        <input type="text" id="pointsInput" placeholder="Entrez + ou - suivi de la valeur">
+        <button onclick="confirmClick(this); updatePoints()">Appliquer</button>
+        <input type="number" id="freezeDuration" placeholder="Durée Freeze (minutes)" min="1">
+        <button class="freeze-button" id="freezeButton" onclick="confirmClick(this); toggleFreeze()">Freeze</button>
+        
+        <!-- Bouton pour annuler la dernière action -->
+        <button onclick="confirmClick(this); undoLastAction()">Annuler la dernière action</button>
+        
+        <!-- Bouton ON/OFF pour activer/désactiver le décompte automatique -->
+        <button onclick="toggleAutoDecrement()">Décompte automatique: <span id="autoDecrementStatus">OFF</span></button>
+        
+        <button class="close-button" onclick="togglePanel('settingsPanel')">Fermer</button>
+    </div>
+
+    <!-- Interface de log -->
+    <div class="panel log-panel" id="logPanel">
+        <h2>Historique des Actions</h2>
+        <div id="logContent" class="log-content"></div>
+        <button onclick="clearLog()">Clear Log</button>
+        <button class="close-button" onclick="togglePanel('logPanel')">Fermer</button>
+    </div>
+
+    <!-- Compte à rebours centré en bas -->
+    <div class="countdown" id="countdown">Temps restant : --j --h --m --s</div>
+
+    <script>
+        const teams = {
+            nico: { points: 10000, frozen: false, freezeTime: 0, freezeTotal: 0, keys: 0 },
+            yanis: { points: 10000, frozen: false, freezeTime: 0, freezeTotal: 0, keys: 0 },
+            matt: { points: 10000, frozen: false, freezeTime: 0, freezeTotal: 0, keys: 0 }
+        };
+        const actionsLog = [];
+        const endDate = new Date("2024-11-21T18:00:00");
+        let autoDecrementActive = false;
+        let autoDecrementInterval;
+
+        function updateCountdown() {
+            const now = new Date();
+            const timeLeft = endDate - now;
+            if (timeLeft <= 0) {
+                document.getElementById("countdown").textContent = "Jeu terminé";
+                clearInterval(countdownInterval);
+                return;
+            }
+            const days = Math.floor(timeLeft / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((timeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
+            document.getElementById("countdown").textContent = `Temps restant : ${days}j ${hours}h ${minutes}m ${seconds}s`;
+        }
+
+        function updatePoints() {
+            const teamKey = document.getElementById("teamSelect").value;
+            const pointsChange = parseInt(document.getElementById("pointsInput").value, 10);
+            if (isNaN(pointsChange)) return;
+            teams[teamKey].points += pointsChange;
+            document.getElementById(`points-${teamKey}`).textContent = teams[teamKey].points;
+            logAction(teamKey, pointsChange);
+            actionsLog.push({ teamKey, pointsChange });
+            updateRanking();
+        }
+
+        function toggleAutoDecrement() {
+            autoDecrementActive = !autoDecrementActive;
+            document.getElementById("autoDecrementStatus").textContent = autoDecrementActive ? "ON" : "OFF";
+            document.getElementById("statusIndicator").style.backgroundColor = autoDecrementActive ? "green" : "red";
+            if (autoDecrementActive) {
+                autoDecrementInterval = setInterval(decreasePoints, 60000); // Décrément toutes les minutes
+            } else {
+                clearInterval(autoDecrementInterval);
+            }
+        }
+
+        function decreasePoints() {
+            Object.keys(teams).forEach(teamKey => {
+                if (!teams[teamKey].frozen) {
+                    teams[teamKey].points = Math.max(0, teams[teamKey].points - 1);
+                    document.getElementById(`points-${teamKey}`).textContent = teams[teamKey].points;
+                }
+            });
+            updateRanking();
+        }
+
+        function toggleFreeze() {
+            const teamKey = document.getElementById("teamSelect").value;
+            const team = teams[teamKey];
+            team.frozen = !team.frozen;
+            document.getElementById(`freeze-timer-${teamKey}`).textContent = team.frozen ? "Freeze Activé" : "";
+        }
+
+        function updateRanking() {
+            const rankingEl = document.getElementById("ranking");
+            const teamPoints = Object.entries(teams).map(([key, data]) => ({ name: key, points: data.points }));
+            teamPoints.sort((a, b) => b.points - a.points);
+
+            const ranks = teamPoints.map((team, index) => {
+                if (index > 0 && team.points === teamPoints[index - 1].points) return "-";
+                return index === 0 ? "🏆 " + team.name : index === 1 ? "🥈 " + team.name : "🥉 " + team.name;
+            });
+
+            rankingEl.innerHTML = ranks.join(" | ");
+        }
+
+        function undoLastAction() {
+            const lastAction = actionsLog.pop();
+            if (!lastAction) return;
+            const { teamKey, pointsChange } = lastAction;
+            teams[teamKey].points -= pointsChange;
+            document.getElementById(`points-${teamKey}`).textContent = teams[teamKey].points;
+            logAction(teamKey, -pointsChange, "undo");
+            updateRanking();
+        }
+
+        function logAction(team, points, action = "points") {
+            const logContent = document.getElementById("logContent");
+            const entry = document.createElement("div");
+            entry.className = `log-entry ${points > 0 ? 'add' : 'subtract'}`;
+            entry.innerHTML = `
+                <span class="team-${team}">${team.charAt(0).toUpperCase() + team.slice(1)}</span> 
+                ${action === "points" ? (points > 0 ? "a gagné" : "a perdu") + ` ${Math.abs(points)} points` : "Annulation de l'action précédente"}
+            `;
+            logContent.prepend(entry);
+        }
+
+        function clearLog() {
+            const logContent = document.getElementById("logContent");
+            const timestamp = new Date().toLocaleString();
+            logContent.innerHTML = `<div class="log-entry">Log clear le ${timestamp}</div>`;
+        }
+
+        function togglePanel(panelId) {
+            const panel = document.getElementById(panelId);
+            panel.style.display = panel.style.display === "none" || panel.style.display === "" ? "block" : "none";
+        }
+
+        function confirmClick(button) {
+            button.classList.add("confirm-click");
+            setTimeout(() => button.classList.remove("confirm-click"), 500);
+        }
+
+        setInterval(updateCountdown, 1000); // Mise à jour du compte à rebours toutes les secondes
+    </script>
+</body>
+</html>
