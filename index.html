@@ -108,6 +108,17 @@
             padding: 20px;
             width: 30%;
             box-shadow: 0 4px 10px rgba(255, 0, 0, 0.5);
+            transition: border-color 0.3s ease;
+        }
+
+        /* Style pour le contour vert en mode freeze */
+        .freeze-active {
+            border: 3px solid green;
+        }
+
+        /* Classe pour les points en couleur or */
+        .gold-points {
+            color: gold;
         }
 
         .team-name {
@@ -194,7 +205,7 @@
     <div class="ranking" id="ranking"></div>
 
     <div class="team-container">
-        <div class="team">
+        <div class="team" id="team-nico">
             <div class="team-name">Equipe Nico</div>
             <div class="points" id="points-nico">10000</div>
             <div class="team-details">
@@ -204,7 +215,7 @@
             </div>
             <div class="freeze-timer" id="freeze-timer-nico"></div>
         </div>
-        <div class="team">
+        <div class="team" id="team-yanis">
             <div class="team-name">Equipe Yanis</div>
             <div class="points" id="points-yanis">10000</div>
             <div class="team-details">
@@ -214,7 +225,7 @@
             </div>
             <div class="freeze-timer" id="freeze-timer-yanis"></div>
         </div>
-        <div class="team">
+        <div class="team" id="team-matt">
             <div class="team-name">Equipe Matt</div>
             <div class="points" id="points-matt">10000</div>
             <div class="team-details">
@@ -312,15 +323,57 @@
 
         function toggleFreeze() {
             const teamKey = document.getElementById("teamSelect").value;
+            const freezeDuration = parseInt(document.getElementById("freezeDuration").value, 10);
+
+            if (isNaN(freezeDuration) || freezeDuration <= 0) return;
+
             const team = teams[teamKey];
-            team.frozen = !team.frozen;
-            document.getElementById(`freeze-timer-${teamKey}`).textContent = team.frozen ? "Freeze Activé" : "";
+            if (team.frozen) {
+                team.frozen = false;
+                clearInterval(team.freezeInterval);
+                team.freezeTime = 0;
+                document.getElementById(`freeze-timer-${teamKey}`).textContent = "";
+                document.getElementById(`team-${teamKey}`).classList.remove("freeze-active");
+            } else {
+                team.frozen = true;
+                team.freezeTime = freezeDuration * 60;
+                document.getElementById(`team-${teamKey}`).classList.add("freeze-active");
+                startFreezeCountdown(teamKey);
+            }
+        }
+
+        function startFreezeCountdown(teamKey) {
+            const team = teams[teamKey];
+            const freezeDisplay = document.getElementById(`freeze-timer-${teamKey}`);
+
+            team.freezeInterval = setInterval(() => {
+                if (team.freezeTime <= 0) {
+                    clearInterval(team.freezeInterval);
+                    team.frozen = false;
+                    freezeDisplay.textContent = "";
+                    document.getElementById(`team-${teamKey}`).classList.remove("freeze-active");
+                    return;
+                }
+                team.freezeTime--;
+                const minutes = Math.floor(team.freezeTime / 60);
+                const seconds = team.freezeTime % 60;
+                freezeDisplay.textContent = `Freeze restant : ${minutes}m ${seconds}s`;
+            }, 1000);
         }
 
         function updateRanking() {
             const rankingEl = document.getElementById("ranking");
             const teamPoints = Object.entries(teams).map(([key, data]) => ({ name: key, points: data.points }));
             teamPoints.sort((a, b) => b.points - a.points);
+
+            // Réinitialise la couleur des points pour toutes les équipes
+            Object.keys(teams).forEach(teamKey => {
+                document.getElementById(`points-${teamKey}`).classList.remove("gold-points");
+            });
+
+            // Applique la classe gold-points à l'équipe en tête
+            const topTeam = teamPoints[0].name;
+            document.getElementById(`points-${topTeam}`).classList.add("gold-points");
 
             const ranks = teamPoints.map((team, index) => {
                 if (index > 0 && team.points === teamPoints[index - 1].points) return "-";
