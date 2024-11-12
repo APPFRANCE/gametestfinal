@@ -92,6 +92,21 @@
             transform: scale(0.95);
         }
 
+        /* Nouveau style pour le menu déroulant de la vitesse */
+        .speed-select {
+            background-color: #333;
+            color: #fff;
+            border-radius: 5px;
+            padding: 5px 10px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        /* Style vert pour indiquer qu'une vitesse est activée */
+        .active-speed {
+            background-color: green;
+        }
+
         .team-container {
             display: flex;
             justify-content: space-around;
@@ -196,6 +211,15 @@
             <div>Temps de Freeze (points sauvés) : <span id="freezeTime">Nico: 0m, Yanis: 0m, Matt: 0m</span></div>
             <div>Indices trouvés : 🔑 <span id="indicesFound">Nico: 0, Yanis: 0, Matt: 0</span></div>
         </div>
+
+        <!-- Nouveau menu déroulant pour la sélection de la vitesse -->
+        <select id="speedSelect" class="speed-select" onchange="updateSpeed()">
+            <option value="1">Vitesse normale</option>
+            <option value="2">X2</option>
+            <option value="3">X3</option>
+            <option value="4">X4</option>
+        </select>
+
         <div class="buttons">
             <div class="button" onclick="togglePanel('settingsPanel')">Settings</div>
             <div class="button" onclick="togglePanel('logPanel')">Log</div>
@@ -273,6 +297,7 @@
         const endDate = new Date("2024-11-21T18:00:00");
         let autoDecrementActive = false;
         let autoDecrementInterval;
+        let decrementSpeed = 60000; // Par défaut : 1 point par minute
 
         function updateCountdown() {
             const now = new Date();
@@ -300,12 +325,29 @@
             updateRanking();
         }
 
+        function updateSpeed() {
+            const speed = parseInt(document.getElementById("speedSelect").value);
+            if (speed === 2) decrementSpeed = 30000; // X2 : toutes les 30 secondes
+            else if (speed === 3) decrementSpeed = 20000; // X3 : toutes les 20 secondes
+            else if (speed === 4) decrementSpeed = 15000; // X4 : toutes les 15 secondes
+            else decrementSpeed = 60000; // Vitesse normale : toutes les 60 secondes
+
+            // Active le style vert si la vitesse est supérieure à 1
+            document.getElementById("speedSelect").classList.toggle("active-speed", speed > 1);
+
+            // Redémarre le décompte automatique si activé
+            if (autoDecrementActive) {
+                clearInterval(autoDecrementInterval);
+                autoDecrementInterval = setInterval(decreasePoints, decrementSpeed);
+            }
+        }
+
         function toggleAutoDecrement() {
             autoDecrementActive = !autoDecrementActive;
             document.getElementById("autoDecrementStatus").textContent = autoDecrementActive ? "ON" : "OFF";
             document.getElementById("statusIndicator").style.backgroundColor = autoDecrementActive ? "green" : "red";
             if (autoDecrementActive) {
-                autoDecrementInterval = setInterval(decreasePoints, 60000);
+                autoDecrementInterval = setInterval(decreasePoints, decrementSpeed);
             } else {
                 clearInterval(autoDecrementInterval);
             }
